@@ -20,7 +20,6 @@ def check_ssh_connection(host, port, username, password, timeout):
             "ssh", 
             "-o", f"ConnectTimeout={timeout}",  # Set the connection timeout
             "-o", "StrictHostKeyChecking=no",  # Automatically accept host keys
-            "-o", "BatchMode=yes",  # Disable interaction
             "-o", "PasswordAuthentication=yes",  # Ensure password authentication is used
             "-p", str(port),  # Port for SSH connection
             f"{username}@{host}",  # Username and host
