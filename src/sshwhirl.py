@@ -33,6 +33,7 @@ def check_ssh_connection(host, port, username, password, timeout, retry_count=0)
 
         # Check if the ssh command was successful
         if result.returncode == 0:
+            print(f"[+] SSH authentication succeeded on {host} ({username}:{password})")
             return f"[+] SSH authentication succeeded on {host} ({username}:{password})"
         elif result.returncode == 255:  # SSH connection reset or error
             if retry_count < 3:
