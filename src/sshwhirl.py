@@ -28,7 +28,7 @@ def check_ssh_connection(host, port, username, password, timeout):
 
         # Run the command using subprocess
         result = subprocess.run(command, text=True, capture_output=True)
-
+        print(result.returncode)
         # Check if the ssh command was successful
         if result.returncode == 0:
             return f"[+] SSH authentication succeeded on {host} ({username}:{password})"
