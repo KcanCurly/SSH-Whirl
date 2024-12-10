@@ -9,9 +9,10 @@ semaphore = threading.Semaphore(10)  # Adjust as needed
 
 lock = threading.Lock()  # Lock for writing to the result file
 
-def check_ssh_connection(host, port, username, password, timeout):
+def check_ssh_connection(host, port, username, password, timeout, retry_count=0):
     """
     Check if SSH connection is successful using the system's sshpass and ssh command.
+    Supports retrying after a connection reset.
     """
     try:
         # Construct the sshpass command to pass the password and run the ssh command
@@ -29,12 +30,20 @@ def check_ssh_connection(host, port, username, password, timeout):
 
         # Run the command using subprocess
         result = subprocess.run(command, text=True, capture_output=True)
-        print(result.returncode)
+
         # Check if the ssh command was successful
         if result.returncode == 0:
             return f"[+] SSH authentication succeeded on {host} ({username}:{password})"
+        elif result.returncode == 255:  # SSH connection reset or error
+            if retry_count < 3:
+                wait_time = [30, 60, 90][retry_count]  # Retry times (30, 60, 90 seconds)
+                print(f"Connection reset on {host}. Retrying in {wait_time} seconds...")
+                time.sleep(wait_time)  # Wait before retrying
+                return check_ssh_connection(host, port, username, password, timeout, retry_count + 1)
+            else:
+                return f"[!] Maximum retries reached for {host} ({username}:{password})"
         else:
-            return None  # Return None if authentication failed
+            return None  # Return None if authentication failed for another reason
 
     except Exception as e:
         return f"[!] Error connecting to {host} ({username}:{password}): {e}"
@@ -59,13 +68,6 @@ def process_host(host, port, credentials, result_file, timeout):
             message = check_ssh_connection(host, port, username, password, timeout)
             if message:  # Only write successful logins
                 write_to_file(result_file, message)
-            
-            attempt_count += 1
-            
-            # Introduce a 13-second delay after the 9th attempt
-            if attempt_count == 9:
-                print(f"Reached 9 attempts. Pausing for 13 seconds...")
-                time.sleep(13)  # 13-second delay after 9th attempt
 
 
 def main():
