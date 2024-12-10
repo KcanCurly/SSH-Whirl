@@ -2,6 +2,7 @@ import subprocess
 import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
+import time
 
 # Semaphore to limit concurrent threads
 semaphore = threading.Semaphore(10)  # Adjust as needed
@@ -52,11 +53,19 @@ def process_host(host, port, credentials, result_file, timeout):
     """
     Process a single host with all credentials and save results to a file.
     """
+    attempt_count = 0  # Counter for login attempts
     with semaphore:
         for username, password in credentials:
             message = check_ssh_connection(host, port, username, password, timeout)
             if message:  # Only write successful logins
                 write_to_file(result_file, message)
+            
+            attempt_count += 1
+            
+            # Introduce a 13-second delay after the 9th attempt
+            if attempt_count == 9:
+                print(f"Reached 9 attempts. Pausing for 13 seconds...")
+                time.sleep(13)  # 13-second delay after 9th attempt
 
 
 def main():
