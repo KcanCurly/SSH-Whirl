@@ -4,7 +4,7 @@ setup(
     name="SSHWhirl",
     version="1.0.0",
     author="KcanCurly",
-    description="A script to dump files and folders remotely from a Windows SMB share.",
+    description="A script to brute ssh.",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     url="https://github.com/KcanCurly/SSHWhirl",

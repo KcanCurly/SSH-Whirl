@@ -30,7 +30,7 @@ def check_ssh_connection(host, port, username, password, timeout, retry_count=0)
 
         # Run the command using subprocess
         result = subprocess.run(command, text=True, capture_output=True)
-
+        
         # Check if the ssh command was successful
         if result.returncode == 0:
             print(f"[+] SSH authentication succeeded on {host} ({username}:{password})")
@@ -47,8 +47,36 @@ def check_ssh_connection(host, port, username, password, timeout, retry_count=0)
             return None  # Return None if authentication failed for another reason
 
     except Exception as e:
+        print(e)
         return f"[!] Error connecting to {host} ({username}:{password}): {e}"
 
+def pre_check(host, port, timeout):
+    try:
+        # Construct the sshpass command to pass the password and run the ssh command
+        command = [
+            "sshpass", 
+            "-p", "a",  # Password for SSH
+            "ssh", 
+            "-o", f"ConnectTimeout={timeout}",  # Set the connection timeout
+            "-o", "StrictHostKeyChecking=no",  # Automatically accept host keys
+            "-o", "PasswordAuthentication=yes",  # Ensure password authentication is used
+            "-p", str(port),  # Port for SSH connection
+            f"a@{host}",  # Username and host
+            "exit"  # Simple command to execute (does nothing)
+        ]
+
+        # Run the command using subprocess
+        result = subprocess.run(command, text=True, capture_output=True)
+        print(result.returncode)
+        # Check if the ssh command was successful
+        if result.returncode == 5:
+            return True
+        
+        return False
+
+    except Exception as e:
+        print(e)
+        return False
 
 def write_to_file(result_file, message):
     """
@@ -63,12 +91,16 @@ def process_host(host, port, credentials, result_file, timeout):
     """
     Process a single host with all credentials and save results to a file.
     """
-    attempt_count = 0  # Counter for login attempts
+
     with semaphore:
+        if not pre_check(host, port, timeout):
+            return
         for username, password in credentials:
             message = check_ssh_connection(host, port, username, password, timeout)
-            if message:  # Only write successful logins
+            if message.startswith("[+]"):  # Only write successful logins
                 write_to_file(result_file, message)
+            elif message.startswith("[!]"):
+                return
 
 
 def main():
@@ -79,6 +111,9 @@ def main():
     parser.add_argument("--timeout", type=int, default=10, help="Timeout for SSH connections in seconds.")
     parser.add_argument("--threads", type=int, default=10, help="Number of concurrent threads.")
     args = parser.parse_args()
+    
+    global semaphore
+    semaphore = threading.Semaphore(args.threads)
 
     # Read hosts from the input file
     hosts = []
