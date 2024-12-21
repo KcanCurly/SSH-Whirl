@@ -14,6 +14,7 @@ def check_ssh_connection(host, port, username, password, timeout, retry_count=0)
     Check if SSH connection is successful using the system's sshpass and ssh command.
     Supports retrying after a connection reset.
     """
+    print(f"Trying {username}:{password} on {host}:{port}")
     try:
         # Construct the sshpass command to pass the password and run the ssh command
         command = [
