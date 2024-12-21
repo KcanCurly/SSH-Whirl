@@ -1,20 +1,18 @@
 import subprocess
 import argparse
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor
 import threading
 import time
 
-# Semaphore to limit concurrent threads
-semaphore = threading.Semaphore(10)  # Adjust as needed
-
 lock = threading.Lock()  # Lock for writing to the result file
 
-def check_ssh_connection(host, port, username, password, timeout, retry_count=0):
+def check_ssh_connection(host, port, username, password, timeout, verbose, retry_count=0):
     """
     Check if SSH connection is successful using the system's sshpass and ssh command.
     Supports retrying after a connection reset.
     """
-    print(f"Trying {username}:{password} on {host}:{port}")
+    if verbose:
+        print(f"Trying {username}:{password} on {host}:{port}")
     try:
         # Construct the sshpass command to pass the password and run the ssh command
         command = [
@@ -34,15 +32,18 @@ def check_ssh_connection(host, port, username, password, timeout, retry_count=0)
         
         # Check if the ssh command was successful
         if result.returncode == 0:
-            print(f"[+] SSH authentication succeeded on {host} ({username}:{password})")
-            return f"[+] SSH authentication succeeded on {host} ({username}:{password})"
+            print(f"[+] Authentication succeeded on {host} ({username}:{password})")
+            return f"{host}  => {username}:{password}"
         elif result.returncode == 255:  # SSH connection reset or error
             if retry_count < 3:
-                wait_time = [30, 60, 90][retry_count]  # Retry times (30, 60, 90 seconds)
-                print(f"Connection reset on {host}. Retrying in {wait_time} seconds...")
+                wait_time = [20, 40, 60][retry_count]  # Retry times (20, 40, 60 seconds)
+                if verbose:
+                    print(f"Connection reset on {host}. Retrying in {wait_time} seconds...")
                 time.sleep(wait_time)  # Wait before retrying
-                return check_ssh_connection(host, port, username, password, timeout, retry_count + 1)
+                return check_ssh_connection(host, port, username, password, timeout, verbose, retry_count + 1)
             else:
+                if verbose:
+                    print(f"[!] Maximum retries reached for {host} ({username}:{password})")
                 return f"[!] Maximum retries reached for {host} ({username}:{password})"
         else:
             return None  # Return None if authentication failed for another reason
@@ -51,7 +52,7 @@ def check_ssh_connection(host, port, username, password, timeout, retry_count=0)
         print(e)
         return f"[!] Error connecting to {host} ({username}:{password}): {e}"
 
-def pre_check(host, port, timeout):
+def pre_check(host, port, timeout, verbose):
     try:
         # Construct the sshpass command to pass the password and run the ssh command
         command = [
@@ -79,7 +80,7 @@ def pre_check(host, port, timeout):
         print(e)
         return False
 
-def write_to_file(result_file, message):
+def write_to_file(result_file, message, verbose):
     """
     Safely write a message to the result file.
     """
@@ -88,65 +89,74 @@ def write_to_file(result_file, message):
             f.write(message + "\n")
 
 
-def process_host(host, port, credentials, result_file, timeout):
+def process_host(host, port, credentials, result_file, timeout, verbose):
     """
     Process a single host with all credentials and save results to a file.
     """
-
-    with semaphore:
-        if not pre_check(host, port, timeout):
+    if verbose:
+        print(f"Processing host {host}:{port}")
+    if not pre_check(host, port, timeout, verbose):
+        if verbose:
+            print(f"Precheck failed:  {host}:{port}")
+        return
+    for username, password in credentials:
+        message = check_ssh_connection(host, port, username, password, timeout, verbose)
+        if message and message.startswith("[+]"):  # Only write successful logins
+            write_to_file(result_file, message, verbose)
+        elif message and message.startswith("[!]"):
             return
-        for username, password in credentials:
-            message = check_ssh_connection(host, port, username, password, timeout)
-            if message.startswith("[+]"):  # Only write successful logins
-                write_to_file(result_file, message)
-            # elif message.startswith("[!]"):
-            #    return
 
 
 def main():
     parser = argparse.ArgumentParser(description="Check SSH authentication on servers using sshpass and ssh command.")
-    parser.add_argument("hosts_file", help="Path to the input file with host details.")
-    parser.add_argument("credentials_file", help="Path to the file with credentials (username:password).")
-    parser.add_argument("result_file", help="Path to the file where results will be saved.")
+    parser.add_argument("hosts-file", help="Path to the input file with host details.")
+    parser.add_argument("credentials-file", help="Path to the file with credentials (username:password).")
+    parser.add_argument("result-file", default="sshwhirl-output.txt", help="Path to the file where results will be saved.")
     parser.add_argument("--timeout", type=int, default=10, help="Timeout for SSH connections in seconds.")
     parser.add_argument("--threads", type=int, default=10, help="Number of concurrent threads.")
+    parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
     args = parser.parse_args()
     
     global semaphore
     semaphore = threading.Semaphore(args.threads)
 
+
+
+    # Read credentials from the credentials file
+    credentials = []
+    cred_number = 0
+    with open(args.credentials_file, "r") as f:
+        for line in f:
+            cred_number += 1
+            if ":" in line:
+                username, password = line.strip().split(":", 1)
+                credentials.append((username, password))
+    if args.verbose:
+        print(f"{credentials} credentials found")
+
+    # Clear the result file at the start
+    with open(args.result_file, "w") as f:
+        f.write("")  # Clear contents
+        
+    max_threads = args.threads
+
+    host_number = 0
     # Read hosts from the input file
     hosts = []
     with open(args.hosts_file, "r") as f:
         for line in f:
+            host_number += 1
             parts = line.strip().split()
             if len(parts) >= 1:
                 host = parts[0]
                 port = int(parts[1]) if len(parts) > 1 else 22
                 hosts.append((host, port))
-
-    # Read credentials from the credentials file
-    credentials = []
-    with open(args.credentials_file, "r") as f:
-        for line in f:
-            if ":" in line:
-                username, password = line.strip().split(":", 1)
-                credentials.append((username, password))
-
-    # Clear the result file at the start
-    with open(args.result_file, "w") as f:
-        f.write("")  # Clear contents
-
-    # Create a thread pool and process hosts
-    with ThreadPoolExecutor(max_workers=args.threads) as executor:
-        futures = []
-        for host, port in hosts:
-            futures.append(executor.submit(process_host, host, port, credentials, args.result_file, args.timeout))
-
-        # Wait for all threads to complete
-        for future in as_completed(futures):
-            pass  # You can add logging here if you want to track progress
+    
+    if args.verbose:
+        print(f"{host_number} hosts are going to be processed")
+        
+    with ThreadPoolExecutor(max_threads) as executor:
+        executor.map(lambda host: process_host(host[0], host[1], credentials, args.result_file, args.timeout, args.verbose), hosts)
 
 if __name__ == "__main__":
     main()
