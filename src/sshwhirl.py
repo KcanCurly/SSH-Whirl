@@ -109,9 +109,9 @@ def process_host(host, port, credentials, result_file, timeout, verbose):
 
 def main():
     parser = argparse.ArgumentParser(description="Check SSH authentication on servers using sshpass and ssh command.")
-    parser.add_argument("hosts-file", help="Path to the input file with host details.")
-    parser.add_argument("credentials-file", help="Path to the file with credentials (username:password).")
-    parser.add_argument("result-file", default="sshwhirl-output.txt", help="Path to the file where results will be saved.")
+    parser.add_argument("hosts_file", help="Path to the input file with host details.")
+    parser.add_argument("credentials_file", help="Path to the file with credentials (username:password).")
+    parser.add_argument("result_file", default="sshwhirl-output.txt", help="Path to the file where results will be saved.")
     parser.add_argument("--timeout", type=int, default=10, help="Timeout for SSH connections in seconds.")
     parser.add_argument("--threads", type=int, default=10, help="Number of concurrent threads.")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
@@ -131,6 +131,8 @@ def main():
             if ":" in line:
                 username, password = line.strip().split(":", 1)
                 credentials.append((username, password))
+                
+                
     if args.verbose:
         print(f"{credentials} credentials found")
 
