@@ -33,7 +33,7 @@ def check_ssh_connection(host, port, username, password, timeout, verbose, retry
         # Check if the ssh command was successful
         if result.returncode == 0:
             print(f"[+] Authentication succeeded on {host} ({username}:{password})")
-            return f"{host}  => {username}:{password}"
+            return f"[+] {host}  => {username}:{password}"
         elif result.returncode == 255:  # SSH connection reset or error
             if retry_count < 3:
                 wait_time = [20, 40, 60][retry_count]  # Retry times (20, 40, 60 seconds)
@@ -102,7 +102,7 @@ def process_host(host, port, credentials, result_file, timeout, verbose):
     for username, password in credentials:
         message = check_ssh_connection(host, port, username, password, timeout, verbose)
         if message and message.startswith("[+]"):  # Only write successful logins
-            write_to_file(result_file, message, verbose)
+            write_to_file(result_file, message[3:], verbose)
         elif message and message.startswith("[!]"):
             return
 
