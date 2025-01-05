@@ -71,10 +71,10 @@ def pre_check(host, port, timeout, verbose):
         result = subprocess.run(command, text=True, capture_output=True)
 
         # Check if the ssh command was successful
-        if result.returncode == 5:
-            return True
+        if result.returncode == 255:
+            return False
         
-        return False
+        return True
 
     except Exception as e:
         print(e)
