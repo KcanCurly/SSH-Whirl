@@ -22,7 +22,7 @@ def check_ssh_connection(host, port, username, password, timeout, verbose, retry
             "-o", f"ConnectTimeout={timeout}",  # Set the connection timeout
             "-o", "StrictHostKeyChecking=no",  # Automatically accept host keys
             "-o", "PasswordAuthentication=yes",  # Ensure password authentication is used
-            "-p", str(port),  # Port for SSH connection
+            "-p", port,  # Port for SSH connection
             f"{username}@{host}",  # Username and host
             "exit"  # Simple command to execute (does nothing)
         ]
@@ -62,7 +62,7 @@ def pre_check(host, port, timeout, verbose):
             "-o", f"ConnectTimeout={timeout}",  # Set the connection timeout
             "-o", "StrictHostKeyChecking=no",  # Automatically accept host keys
             "-o", "PasswordAuthentication=yes",  # Ensure password authentication is used
-            "-p", str(port),  # Port for SSH connection
+            "-p", port,  # Port for SSH connection
             f"a@{host}",  # Username and host
             "exit"  # Simple command to execute (does nothing)
         ]
@@ -148,11 +148,13 @@ def main():
     with open(args.hosts_file, "r") as f:
         for line in f:
             host_number += 1
-            parts = line.strip().split()
-            if len(parts) >= 1:
-                host = parts[0]
-                port = int(parts[1]) if len(parts) > 1 else 22
-                hosts.append((host, port))
+            line = line.strip()
+            port = "22"
+            host = line
+            if ":" in line:
+                host = line.split(":")[0]
+                port = line.split(":")[1]
+            hosts.append((host, port))
     
     if args.verbose:
         print(f"{host_number} hosts are going to be processed")
