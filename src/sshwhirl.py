@@ -102,7 +102,7 @@ def process_host(host, port, credentials, result_file, timeout, verbose):
     for username, password in credentials:
         message = check_ssh_connection(host, port, username, password, timeout, verbose)
         if message and message.startswith("[+]"):  # Only write successful logins
-            write_to_file(result_file, message[3:], verbose)
+            write_to_file(result_file, message[4:], verbose)
         elif message and message.startswith("[!]"):
             return
 
