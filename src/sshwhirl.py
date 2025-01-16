@@ -22,13 +22,16 @@ def check_ssh_connection(host, port, username, password, timeout, verbose, retry
             "-o", f"ConnectTimeout={timeout}",  # Set the connection timeout
             "-o", "StrictHostKeyChecking=no",  # Automatically accept host keys
             "-o", "PasswordAuthentication=yes",  # Ensure password authentication is used
+            "-o", "KexAlgorithms=+diffie-hellman-group1-sha1,diffie-hellman-group14-sha1,diffie-hellman-group-exchange-sha1,diffie-hellman-group-exchange-sha256",
+            "-o", "Ciphers=+aes128-ctr,aes192-ctr,aes256-ctr,aes128-cbc,3des-cbc,arcfour",
+            "-o", "MACs=+hmac-sha1,hmac-md5,hmac-sha2-256,hmac-sha2-512",
             "-p", port,  # Port for SSH connection
             f"{username}@{host}",  # Username and host
             "exit"  # Simple command to execute (does nothing)
         ]
 
         # Run the command using subprocess
-        result = subprocess.run(command, text=True, capture_output=True)
+        result = subprocess.run(command, text=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         
         # Check if the ssh command was successful
         if result.returncode == 0:
@@ -68,7 +71,7 @@ def pre_check(host, port, timeout, verbose):
         ]
 
         # Run the command using subprocess
-        result = subprocess.run(command, text=True)
+        result = subprocess.run(command, text=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
         # Check if the ssh command was successful
         if result.returncode == 255:
