@@ -23,7 +23,7 @@ def check_ssh_connection(host, port, username, password, timeout, verbose, retry
             "-o", "StrictHostKeyChecking=no",  # Automatically accept host keys
             "-o", "PasswordAuthentication=yes",  # Ensure password authentication is used
             "-o", "KexAlgorithms=+diffie-hellman-group1-sha1,diffie-hellman-group14-sha1,diffie-hellman-group-exchange-sha1,diffie-hellman-group-exchange-sha256",
-            "-o", "Ciphers=+aes128-ctr,aes192-ctr,aes256-ctr,aes128-cbc,3des-cbc,arcfour",
+            "-o", "Ciphers=+aes128-ctr,aes192-ctr,aes256-ctr,aes128-cbc,3des-cbc",
             "-o", "MACs=+hmac-sha1,hmac-md5,hmac-sha2-256,hmac-sha2-512",
             "-p", port,  # Port for SSH connection
             f"{username}@{host}",  # Username and host
