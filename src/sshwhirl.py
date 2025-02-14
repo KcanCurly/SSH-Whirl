@@ -99,12 +99,11 @@ def write_to_file(result_file, message, verbose):
         with open(result_file, "a") as f:
             f.write(message + "\n")
 
-text_column1 = TextColumn("{task.fields[taskid]}", table_column=Column("Host", ratio=1), style= "bold")
-text_column2 = TextColumn("{task.fields[status]}", table_column=Column("Status", ratio=1), style= "dim")
+text_column1 = TextColumn("{task.fields[taskid]}", table_column=Column(header="Host", ratio=1), style= "bold")
+text_column2 = TextColumn("{task.fields[status]}", table_column=Column(header="Status", ratio=1), style= "dim")
 
 progress = Progress(
-    text_column1, BarColumn(), text_column2, refresh_per_second= 1
-)
+    text_column1, BarColumn(), text_column2, refresh_per_second= 1)
 
 console = Console()
 
@@ -115,14 +114,14 @@ def process_host2(task_id, ip, port, credentials, result_file, timeout, verbose)
     cred_len = len(credentials)
     thread_name = threading.current_thread().name
     try:
-        progress.update(task_id, status=f"[yellow]Processing {ip}:{port}[/yellow]")
+        progress.update(task_id, status=f"[yellow]Processing {ip}:{port}[/yellow]", total=cred_len)
         progress.start_task(task_id)
         if not pre_check(ip, port, timeout, verbose):
             progress.update(task_id, status=f"[red]Precheck Failed {ip}:{port}[/red]")
         else:
             for i, (username, password) in enumerate(credentials):
                 message = check_ssh_connection(ip, port, username, password, timeout, verbose)
-                progress.update(task_id, status=f"[yellow]Processing {ip}:{port} - {i}/{cred_len}[/yellow]")
+                progress.update(task_id, status=f"[yellow]Processing {ip}:{port} - {i}/{cred_len}[/yellow]", advance=1)
                 if message and message.startswith("[+]"):
                     progress.update(task_id, status=f"[green]Found {ip}:{port} -> {username}:{password}[/green]")
                     write_to_file(result_file, message[4:], verbose)
@@ -186,7 +185,7 @@ def main():
     with progress:
         with ThreadPoolExecutor(max_threads) as executor:
             for host in hosts:
-                task_id = progress.add_task("ZZzzZZ", taskid=f"{host[0]}:{host[1]}", status="status")
+                task_id = progress.add_task("brute", start=False, taskid=f"{host[0]}:{host[1]}", status="status")
                 executor.submit(process_host2, task_id, host[0], host[1], credentials, args.result_file, args.timeout, args.verbose)
             # executor.map(lambda host: process_host(host[0], host[1], credentials, args.result_file, args.timeout, args.verbose), hosts)
 
