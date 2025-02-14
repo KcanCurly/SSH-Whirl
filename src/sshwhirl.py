@@ -134,7 +134,7 @@ def main():
     parser.add_argument("hosts_file", help="Path to the input file with host details.")
     parser.add_argument("credentials_file", help="Path to the file with credentials (username:password).")
     parser.add_argument("result_file", default="sshwhirl-output.txt", help="Path to the file where results will be saved.")
-    parser.add_argument("--timeout", type=int, default=10, help="Timeout for SSH connections in seconds. (Default = 10)")
+    parser.add_argument("--timeout", type=int, default=5, help="Timeout for SSH connections in seconds. (Default = 5)")
     parser.add_argument("--threads", type=int, default=10, help="Number of concurrent threads. (Default = 10)")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
     args = parser.parse_args()
