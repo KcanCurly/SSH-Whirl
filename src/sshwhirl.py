@@ -14,7 +14,7 @@ lock = threading.Lock()  # Lock for writing to the result file
 
 sema = threading.Semaphore(value=5)
 
-def check_ssh_connection(host, port, username, password, timeout, verbose, retry_count=0):
+def check_ssh_connection(task_id, host, port, username, password, timeout, verbose, retry_count=0):
     """
     Check if SSH connection is successful using the system's sshpass and ssh command.
     Supports retrying after a connection reset.
@@ -43,13 +43,11 @@ def check_ssh_connection(host, port, username, password, timeout, verbose, retry
         
         # Check if the ssh command was successful
         if result.returncode == 0:
-            print(f"[+] Authentication succeeded on {host} ({username}:{password})")
             return f"[+] {host}  => {username}:{password}"
         elif result.returncode == 255:  # SSH connection reset or error
             if retry_count < 3:
                 wait_time = [20, 40, 60][retry_count]  # Retry times (20, 40, 60 seconds)
-                if verbose:
-                    print(f"Connection reset on {host}. Retrying in {wait_time} seconds...")
+                progress.update(task_id, status=f"[yellow]Waiting {wait_time} seconds...[/yellow]")
                 time.sleep(wait_time)  # Wait before retrying
                 return check_ssh_connection(host, port, username, password, timeout, verbose, retry_count + 1)
             else:
@@ -63,7 +61,7 @@ def check_ssh_connection(host, port, username, password, timeout, verbose, retry
         print(e)
         return f"[!] Error connecting to {host} ({username}:{password}): {e}"
 
-def pre_check(host, port, timeout, verbose):
+def pre_check(task_id, host, port, timeout, verbose):
     try:
         # Construct the sshpass command to pass the password and run the ssh command
         command = [
@@ -84,7 +82,6 @@ def pre_check(host, port, timeout, verbose):
         # Check if the ssh command was successful
         if result.returncode == 255:
             return False
-        
         return True
 
     except Exception as e:
@@ -114,20 +111,22 @@ def process_host2(task_id, ip, port, credentials, result_file, timeout, verbose)
     cred_len = len(credentials)
     thread_name = threading.current_thread().name
     try:
-        progress.update(task_id, status=f"[yellow]Processing {ip}:{port}[/yellow]", total=cred_len)
+        progress.update(task_id, status=f"[yellow]Processing[/yellow]", total=cred_len)
         progress.start_task(task_id)
-        if not pre_check(ip, port, timeout, verbose):
-            progress.update(task_id, status=f"[red]Precheck Failed {ip}:{port}[/red]", completed=True)
+        if not pre_check(task_id, ip, port, timeout, verbose):
+            progress.update(task_id, status=f"[red]Precheck Failed[/red]", completed=True)
         else:
             for i, (username, password) in enumerate(credentials):
-                message = check_ssh_connection(ip, port, username, password, timeout, verbose)
-                progress.update(task_id, status=f"[yellow]Processing {ip}:{port} - {i}/{cred_len}[/yellow]", advance=1)
+                message = check_ssh_connection(task_id, ip, port, username, password, timeout, verbose)
+                progress.update(task_id, status=f"[yellow]Trying Credentials {i}/{cred_len}[/yellow]", advance=1)
                 if message and message.startswith("[+]"):
-                    progress.update(task_id, status=f"[green]Found {ip}:{port} -> {username}:{password}[/green]", completed=True)
+                    progress.update(task_id, status=f"[green]Found -> {username}:{password}[/green]", completed=True)
                     write_to_file(result_file, message[4:], verbose)
         
     except Exception as e:
-        progress.update(task_id, status=f"[red]Error {ip}:{port}: {e}[/red]", completed=True)
+        progress.update(task_id, status=f"[red]Error {e}[/red]", completed=True)
+        
+    progress.update(task_id, status=f"[red]No cred found[/red]", completed=True)
 
 
 def main():
@@ -147,14 +146,10 @@ def main():
 
     # Read credentials from the credentials file
     credentials = []
-    cred_number = 0
     with open(args.credentials_file, "r") as f:
         for line in f:
-            cred_number += 1
-            if ":" in line:
-                username, password = line.strip().split(":", 1)
-                credentials.append((username, password))
-                
+            username, password = line.strip().split(":", 1)
+            credentials.append((username, password))
                 
     if args.verbose:
         print(f"{credentials} credentials found")
