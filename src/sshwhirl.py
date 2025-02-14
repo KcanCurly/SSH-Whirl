@@ -99,8 +99,8 @@ def write_to_file(result_file, message, verbose):
         with open(result_file, "a") as f:
             f.write(message + "\n")
 
-text_column1 = TextColumn("{task.fields[taskid]}", table_column=Column(ratio=1), style= "bold")
-text_column2 = TextColumn("{task.fields[status]}", table_column=Column(ratio=1), style= "dim")
+text_column1 = TextColumn("{task.fields[taskid]}", table_column=Column("Host", ratio=1), style= "bold")
+text_column2 = TextColumn("{task.fields[status]}", table_column=Column("Status", ratio=1), style= "dim")
 
 progress = Progress(
     text_column1, text_column2, refresh_per_second= 1
@@ -125,7 +125,7 @@ def process_host2(task_id, ip, port, credentials, result_file, timeout, verbose)
         else:
             for i, (username, password) in enumerate(credentials):
                 message = check_ssh_connection(ip, port, username, password, timeout, verbose)
-                progress.update(task_id, status=f"[yellow]Processing {ip}:{port}- {i}/{cred_len}[/yellow]")
+                progress.update(task_id, status=f"[yellow]Processing {ip}:{port} - {i}/{cred_len}[/yellow]")
                 if message and message.startswith("[+]"):
                     progress.update(task_id, status=f"[green]Found {ip}:{port} -> {username}:{password}[/green]")
                     write_to_file(result_file, message[4:], verbose)
