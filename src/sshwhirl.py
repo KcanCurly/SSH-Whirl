@@ -6,7 +6,8 @@ import time
 from rich.console import Console
 from rich.live import Live
 from rich.table import Table
-from rich.progress import Progress, SpinnerColumn, BarColumn, TimeRemainingColumn
+from rich.progress import TaskID, TextColumn, Progress, BarColumn
+from rich.table import Column
 
 
 lock = threading.Lock()  # Lock for writing to the result file
@@ -98,6 +99,12 @@ def write_to_file(result_file, message, verbose):
         with open(result_file, "a") as f:
             f.write(message + "\n")
 
+text_column1 = TextColumn("{task.fields[taskid]}", table_column=Column(ratio=1))
+text_column2 = TextColumn("{task.fields[status]}", table_column=Column(ratio=1))
+
+progress = Progress(
+    text_column1, text_column2, refresh_per_second= 1
+)
 
 def process_host(host, port, credentials, result_file, timeout, verbose):
     if verbose:
@@ -116,24 +123,25 @@ def process_host(host, port, credentials, result_file, timeout, verbose):
 
 console = Console()
 
-def process_host2(ip, port, credentials, result_file, timeout, verbose, progress, task_id, thread_status):
+def process_host2(task_id, ip, port, credentials, result_file, timeout, verbose):
     """
     Function to simulate host processing. Updates thread status dynamically.
     """
     thread_name = threading.current_thread().name
     try:
-        thread_status[thread_name] = f"[yellow]Processing {ip}:{port}[/yellow]"
+        progress.update(task_id, status=f"[yellow]Processing {ip}:{port}[/yellow]")
+        progress.start_task(task_id)
         if not pre_check(ip, port, timeout, verbose):
-            thread_status[thread_name] = f"[red]Precheck failed for {ip}:{port}: {e}[/red]"
+            progress.update(task_id, status=f"[yellow]Processing {ip}:{port}[/yellow]")
         else:
             for username, password in credentials:
                 message = check_ssh_connection(ip, port, username, password, timeout, verbose)
                 if message and message.startswith("[+]"):
-                    thread_status[thread_name] = f"[green]Found {ip}:{port} -> {username}:{password}[/green]"
+                    progress.update(task_id, status=f"[green]Found {ip}:{port} -> {username}:{password}[/green]")
                     write_to_file(result_file, message[4:], verbose)
         
     except Exception as e:
-        thread_status[thread_name] = f"[red]Error {ip}:{port}: {e}[/red]"
+        progress.update(task_id, status=f"[red]Error {ip}:{port}: {e}[/red]")
     finally:
         progress.update(task_id, advance=1)
 
@@ -208,10 +216,14 @@ def main2():
     table.add_column("Thread ID", style="cyan")
     table.add_column("Status", style="magenta")
     
-    with Live(table, refresh_per_second=1) as live:
-        for i in range(args.threads):
-            table.add_row(str(i), f"Initializing Thread")
-            print(table.rows[0].__dict__)
+
+    
+    
+    with progress:
+        with ThreadPoolExecutor(max_threads) as executor:
+            task_id = progress.add_task("ZZzzZZ", taskid=f"{host[0]}:{host[1]}", status="status")
+            executor.submit(process_host2, task_id, host[0], host[1], credentials, args.result_file, args.timeout, args.verbose)
+            # executor.map(lambda host: process_host(host[0], host[1], credentials, args.result_file, args.timeout, args.verbose), hosts)
 
 
 
