@@ -107,7 +107,7 @@ overall_progress = Progress(
 overall_task_id = overall_progress.add_task("", start=False)
 
 progress_group = Group(
-    Panel(progress),
+    Panel(progress, title="SSHWHIRL", expand=False),
     overall_progress,
 )
 
