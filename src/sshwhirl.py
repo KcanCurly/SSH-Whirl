@@ -11,6 +11,8 @@ from rich.progress import Progress, SpinnerColumn, BarColumn, TimeRemainingColum
 
 lock = threading.Lock()  # Lock for writing to the result file
 
+sema = threading.Semaphore(value=5)
+
 def check_ssh_connection(host, port, username, password, timeout, verbose, retry_count=0):
     """
     Check if SSH connection is successful using the system's sshpass and ssh command.
@@ -201,29 +203,16 @@ def main2():
     if args.verbose:
         print(f"{host_number} hosts are going to be processed")
 
-    # Create a dictionary with a row for each thread
-    thread_status = {f"Thread-{i+1}": "[yellow]Waiting...[/yellow]" for i in range(max_threads)}
+    table = Table()
+    table.add_column("Thread ID", style="cyan")
+    table.add_column("Status", style="magenta")
+    
+    with Live(table, refresh_per_second=1) as live:
+        for i in range(args.threads):
+            table.add_row(i, f"Initializing Thread")
 
-    with Progress(
-        SpinnerColumn(),
-        "[progress.description]{task.description}",
-        BarColumn(),
-        TimeRemainingColumn(),
-        console=console,
-    ) as progress:
-        task = progress.add_task("[cyan]Scanning Hosts...", total=len(hosts))
 
-        with ThreadPoolExecutor(max_threads) as executor:
-            futures = {
-                executor.submit(process_host, ip, port, credentials, args.result_file, args.timeout, args.verbose, progress, task, thread_status): (ip, port)
-                for ip, port in hosts
-            }
 
-            with Live(render_table(thread_status), refresh_per_second=1, console=console) as live:
-                for future in as_completed(futures):
-                    live.update(render_table(thread_status))
-
-    console.print("[bold green]All hosts processed![/bold green]")
 
 
 
@@ -261,7 +250,7 @@ def main():
         f.write("")  # Clear contents
         
     max_threads = args.threads
-
+    sema = threading.Semaphore(value=args.threads)
     host_number = 0
     # Read hosts from the input file
     hosts = []
