@@ -113,20 +113,20 @@ def process_host2(task_id, ip, port, credentials, result_file, timeout, verbose)
         progress.update(task_id, status=f"[yellow]Processing[/yellow]", total=cred_len)
         progress.start_task(task_id)
         if not pre_check(task_id, ip, port, timeout, verbose):
-            progress.update(task_id, status=f"[red]Precheck Failed[/red]", completed=True)
+            progress.update(task_id, status=f"[red]Precheck Failed[/red]")
         else:
             for i, (username, password) in enumerate(credentials):
                 message = check_ssh_connection(task_id, ip, port, username, password, timeout, verbose)
                 if message and message.startswith("[+]"):
-                    progress.update(task_id, status=f"[green]Found -> {username}:{password}[/green]", completed=True)
+                    progress.update(task_id, status=f"[green]Found -> {username}:{password}[/green]")
                     write_to_file(result_file, message[4:], verbose)
                     return
                 else: progress.update(task_id, status=f"[yellow]Trying Credentials {i+1}/{cred_len}[/yellow]", advance=1)
         
     except Exception as e:
-        progress.update(task_id, status=f"[red]Error {e}[/red]", completed=True)
+        progress.update(task_id, status=f"[red]Error {e}[/red]")
         
-    progress.update(task_id, status=f"[red]No cred found[/red]", completed=True)
+    progress.update(task_id, status=f"[red]No cred found[/red]")
 
 
 def main():
