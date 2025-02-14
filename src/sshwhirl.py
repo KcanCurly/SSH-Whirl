@@ -151,8 +151,8 @@ def render_table(thread_status):
 
 def main2():
     parser = argparse.ArgumentParser(description="Check SSH authentication on servers using sshpass and ssh command.")
-    parser.add_argument("hosts_file", required=True, help="Path to the input file with host details.")
-    parser.add_argument("credentials_file", required=True, help="Path to the file with credentials (username:password).")
+    parser.add_argument("hosts_file", help="Path to the input file with host details.")
+    parser.add_argument("credentials_file", help="Path to the file with credentials (username:password).")
     parser.add_argument("result_file", default="sshwhirl-output.txt", help="Path to the file where results will be saved.")
     parser.add_argument("--timeout", type=int, default=10, help="Timeout for SSH connections in seconds. (Default = 10)")
     parser.add_argument("--threads", type=int, default=10, help="Number of concurrent threads. (Default = 10)")
