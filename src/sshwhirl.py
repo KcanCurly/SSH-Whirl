@@ -148,7 +148,7 @@ def render_table(thread_status):
 
     for thread, status in thread_status.items():
         table.add_row(thread, status)
-        print(table.rows[0])
+        
 
     return table
 
@@ -211,6 +211,7 @@ def main2():
     with Live(table, refresh_per_second=1) as live:
         for i in range(args.threads):
             table.add_row(str(i), f"Initializing Thread")
+            print(table.rows[0])
 
 
 
