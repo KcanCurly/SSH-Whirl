@@ -115,6 +115,7 @@ def process_host2(task_id, ip, port, credentials, result_file, timeout, verbose)
     """
     Function to simulate host processing. Updates thread status dynamically.
     """
+    cred_len = len(credentials)
     thread_name = threading.current_thread().name
     try:
         progress.update(task_id, status=f"[yellow]Processing {ip}:{port}[/yellow]")
@@ -122,8 +123,9 @@ def process_host2(task_id, ip, port, credentials, result_file, timeout, verbose)
         if not pre_check(ip, port, timeout, verbose):
             progress.update(task_id, status=f"[red]Precheck Failed {ip}:{port}[/red]")
         else:
-            for username, password in credentials:
+            for i, (username, password) in enumerate(credentials):
                 message = check_ssh_connection(ip, port, username, password, timeout, verbose)
+                progress.update(task_id, status=f"[yellow]Processing {ip}:{port}- {i}/{cred_len}[/yellow]")
                 if message and message.startswith("[+]"):
                     progress.update(task_id, status=f"[green]Found {ip}:{port} -> {username}:{password}[/green]")
                     write_to_file(result_file, message[4:], verbose)
