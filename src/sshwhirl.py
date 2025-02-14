@@ -103,11 +103,8 @@ text_column1 = TextColumn("{task.fields[taskid]}", table_column=Column("Host", r
 text_column2 = TextColumn("{task.fields[status]}", table_column=Column("Status", ratio=1), style= "dim")
 
 progress = Progress(
-    text_column1, text_column2, refresh_per_second= 1
+    text_column1, BarColumn(), text_column2, refresh_per_second= 1
 )
-
-
-
 
 console = Console()
 
