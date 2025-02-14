@@ -99,26 +99,14 @@ def write_to_file(result_file, message, verbose):
         with open(result_file, "a") as f:
             f.write(message + "\n")
 
-text_column1 = TextColumn("{task.fields[taskid]}", table_column=Column(ratio=1))
-text_column2 = TextColumn("{task.fields[status]}", table_column=Column(ratio=1))
+text_column1 = TextColumn("{task.fields[taskid]}", table_column=Column(ratio=1), style= "bold")
+text_column2 = TextColumn("{task.fields[status]}", table_column=Column(ratio=1), style= "dim")
 
 progress = Progress(
     text_column1, text_column2, refresh_per_second= 1
 )
 
-def process_host(host, port, credentials, result_file, timeout, verbose):
-    if verbose:
-        print(f"Processing host {host}:{port}")
-    if not pre_check(host, port, timeout, verbose):
-        if verbose:
-            print(f"Precheck failed:  {host}:{port}")
-        return
-    for username, password in credentials:
-        message = check_ssh_connection(host, port, username, password, timeout, verbose)
-        if message and message.startswith("[+]"):  # Only write successful logins
-            write_to_file(result_file, message[4:], verbose)
-        elif message and message.startswith("[!]"):
-            return
+
 
 
 console = Console()
@@ -132,7 +120,7 @@ def process_host2(task_id, ip, port, credentials, result_file, timeout, verbose)
         progress.update(task_id, status=f"[yellow]Processing {ip}:{port}[/yellow]")
         progress.start_task(task_id)
         if not pre_check(ip, port, timeout, verbose):
-            progress.update(task_id, status=f"[yellow]Processing {ip}:{port}[/yellow]")
+            progress.update(task_id, status=f"[red]Precheck Failed {ip}:{port}[/red]")
         else:
             for username, password in credentials:
                 message = check_ssh_connection(ip, port, username, password, timeout, verbose)
@@ -142,25 +130,9 @@ def process_host2(task_id, ip, port, credentials, result_file, timeout, verbose)
         
     except Exception as e:
         progress.update(task_id, status=f"[red]Error {ip}:{port}: {e}[/red]")
-    finally:
-        progress.update(task_id, advance=1)
 
 
-def render_table(thread_status):
-    """
-    Creates a table showing the status of each thread.
-    """
-    table = Table(title="Thread Processing Status", show_header=True, header_style="bold cyan")
-    table.add_column("Thread", style="bold")
-    table.add_column("Current Task", style="dim")
-
-    for thread, status in thread_status.items():
-        table.add_row(thread, status)
-        
-
-    return table
-
-def main2():
+def main():
     parser = argparse.ArgumentParser(description="Check SSH authentication on servers using sshpass and ssh command.")
     parser.add_argument("hosts_file", help="Path to the input file with host details.")
     parser.add_argument("credentials_file", help="Path to the file with credentials (username:password).")
@@ -211,13 +183,6 @@ def main2():
     
     if args.verbose:
         print(f"{host_number} hosts are going to be processed")
-
-    table = Table()
-    table.add_column("Thread ID", style="cyan")
-    table.add_column("Status", style="magenta")
-    
-
-    
     
     with progress:
         with ThreadPoolExecutor(max_threads) as executor:
@@ -228,64 +193,5 @@ def main2():
 
 
 
-
-
-def main():
-    parser = argparse.ArgumentParser(description="Check SSH authentication on servers using sshpass and ssh command.")
-    parser.add_argument("hosts_file", required=True, help="Path to the input file with host details.")
-    parser.add_argument("credentials_file", required=True, help="Path to the file with credentials (username:password).")
-    parser.add_argument("result_file", default="sshwhirl-output.txt", help="Path to the file where results will be saved.")
-    parser.add_argument("--timeout", type=int, default=10, help="Timeout for SSH connections in seconds. (Default = 10)")
-    parser.add_argument("--threads", type=int, default=10, help="Number of concurrent threads. (Default = 10)")
-    parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
-    args = parser.parse_args()
-    
-    global semaphore
-    semaphore = threading.Semaphore(args.threads)
-
-
-
-    # Read credentials from the credentials file
-    credentials = []
-    cred_number = 0
-    with open(args.credentials_file, "r") as f:
-        for line in f:
-            cred_number += 1
-            if ":" in line:
-                username, password = line.strip().split(":", 1)
-                credentials.append((username, password))
-                
-                
-    if args.verbose:
-        print(f"{credentials} credentials found")
-
-    # Clear the result file at the start
-    with open(args.result_file, "w") as f:
-        f.write("")  # Clear contents
-        
-    max_threads = args.threads
-    sema = threading.Semaphore(value=args.threads)
-    host_number = 0
-    # Read hosts from the input file
-    hosts = []
-    with open(args.hosts_file, "r") as f:
-        for line in f:
-            host_number += 1
-            line = line.strip()
-            port = "22"
-            host = line
-            if ":" in line:
-                host = line.split(":")[0]
-                port = line.split(":")[1]
-            hosts.append((host, port))
-    
-    if args.verbose:
-        print(f"{host_number} hosts are going to be processed")
-        
-        
-    r_console = Console()
-    with ThreadPoolExecutor(max_threads) as executor:
-        executor.map(lambda host: process_host(host[0], host[1], credentials, args.result_file, args.timeout, args.verbose), hosts)
-
 if __name__ == "__main__":
-    main2()
+    main()

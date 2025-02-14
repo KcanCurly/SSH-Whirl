@@ -22,7 +22,7 @@ setup(
     python_requires=">=3.9",
     entry_points={
         "console_scripts": [
-            "sshwhirl=src.sshwhirl:main2",  
+            "sshwhirl=src.sshwhirl:main",  
         ],
     },
 )
