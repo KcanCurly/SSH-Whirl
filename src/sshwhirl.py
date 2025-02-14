@@ -6,13 +6,13 @@ import time
 from rich.console import Console
 from rich.live import Live
 from rich.table import Table
-from rich.progress import TaskID, TextColumn, Progress, BarColumn
+from rich.progress import TaskID, TextColumn, Progress, BarColumn, TimeElapsedColumn
 from rich.table import Column
+from rich.console import Group
+from rich.panel import Panel
 
 
 lock = threading.Lock()  # Lock for writing to the result file
-
-sema = threading.Semaphore(value=5)
 
 def check_ssh_connection(task_id, host, port, username, password, timeout, verbose, retry_count=0):
     """
@@ -101,9 +101,16 @@ text_column2 = TextColumn("{task.fields[status]}", table_column=Column(header="S
 progress = Progress(
     text_column1, BarColumn(), text_column2, refresh_per_second= 1)
 
-console = Console()
+overall_progress = Progress(
+    TimeElapsedColumn(), BarColumn(), TextColumn("{task.description}")
+)
 
-def process_host2(task_id, ip, port, credentials, result_file, timeout, verbose):
+progress_group = Group(
+    Panel(progress),
+    overall_progress,
+)
+
+def process_host(task_id, ip, port, credentials, result_file, timeout, verbose):
     """
     Function to simulate host processing. Updates thread status dynamically.
     """
@@ -118,7 +125,7 @@ def process_host2(task_id, ip, port, credentials, result_file, timeout, verbose)
             for i, (username, password) in enumerate(credentials):
                 message = check_ssh_connection(task_id, ip, port, username, password, timeout, verbose)
                 if message and message.startswith("[+]"):
-                    progress.update(task_id, status=f"[green]Found -> {username}:{password}[/green]")
+                    progress.update(task_id, status=f"[green]Found -> {username}:{password}[/green]", advance=1)
                     write_to_file(result_file, message[4:], verbose)
                     return
                 else: progress.update(task_id, status=f"[yellow]Trying Credentials {i+1}/{cred_len}[/yellow]", advance=1)
@@ -177,15 +184,25 @@ def main():
     if args.verbose:
         print(f"{host_number} hosts are going to be processed")
     
+    with Live(progress_group):
+        overall_task_id = overall_progress.add_task("", total=len(hosts))
+        
+        with ThreadPoolExecutor(max_threads) as executor:
+            for host in hosts:
+                task_id = progress.add_task("brute", start=False, taskid=f"{host[0]}:{host[1]}", status="status")
+                executor.submit(process_host, task_id, host[0], host[1], credentials, args.result_file, args.timeout, args.verbose)
+                overall_progress.update(overall_task_id, advance=1)
+    
+    
+    
+    
+    """
     with progress:
         with ThreadPoolExecutor(max_threads) as executor:
             for host in hosts:
                 task_id = progress.add_task("brute", start=False, taskid=f"{host[0]}:{host[1]}", status="status")
-                executor.submit(process_host2, task_id, host[0], host[1], credentials, args.result_file, args.timeout, args.verbose)
-            # executor.map(lambda host: process_host(host[0], host[1], credentials, args.result_file, args.timeout, args.verbose), hosts)
-
-
-
+                executor.submit(process_host, task_id, host[0], host[1], credentials, args.result_file, args.timeout, args.verbose)
+    """
 
 if __name__ == "__main__":
     main()
