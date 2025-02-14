@@ -186,8 +186,9 @@ def main():
     
     with progress:
         with ThreadPoolExecutor(max_threads) as executor:
-            task_id = progress.add_task("ZZzzZZ", taskid=f"{host[0]}:{host[1]}", status="status")
-            executor.submit(process_host2, task_id, host[0], host[1], credentials, args.result_file, args.timeout, args.verbose)
+            for host in hosts:
+                task_id = progress.add_task("ZZzzZZ", taskid=f"{host[0]}:{host[1]}", status="status")
+                executor.submit(process_host2, task_id, host[0], host[1], credentials, args.result_file, args.timeout, args.verbose)
             # executor.map(lambda host: process_host(host[0], host[1], credentials, args.result_file, args.timeout, args.verbose), hosts)
 
 
