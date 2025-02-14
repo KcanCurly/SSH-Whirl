@@ -209,7 +209,7 @@ def main2():
     
     with Live(table, refresh_per_second=1) as live:
         for i in range(args.threads):
-            table.add_row(i, f"Initializing Thread")
+            table.add_row(str(i), f"Initializing Thread")
 
 
 
