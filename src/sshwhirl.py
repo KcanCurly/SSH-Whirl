@@ -211,7 +211,7 @@ def main2():
     with Live(table, refresh_per_second=1) as live:
         for i in range(args.threads):
             table.add_row(str(i), f"Initializing Thread")
-            print(table.rows[0])
+            print(table.rows[0].__dict__())
 
 
 
