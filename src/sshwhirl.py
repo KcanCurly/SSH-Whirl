@@ -47,9 +47,8 @@ def check_ssh_connection(task_id, host, port, username, password, timeout, verbo
         elif result.returncode == 255:  # SSH connection reset or error
             if retry_count < 3:
                 wait_time = [20, 40, 60][retry_count]  # Retry times (20, 40, 60 seconds)
-                progress.update(task_id, status=f"[yellow]Waiting {wait_time} seconds...[/yellow]")
                 time.sleep(wait_time)  # Wait before retrying
-                return check_ssh_connection(host, port, username, password, timeout, verbose, retry_count + 1)
+                return check_ssh_connection(task_id, host, port, username, password, timeout, verbose, retry_count + 1)
             else:
                 if verbose:
                     print(f"[!] Maximum retries reached for {host} ({username}:{password})")
