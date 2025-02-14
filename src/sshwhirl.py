@@ -191,7 +191,7 @@ def main():
     
     with Live(progress_group):
         overall_progress.update(overall_task_id, total=len(hosts))
-        i = 0
+        overall_progress.start_task(overall_task_id)
         with ThreadPoolExecutor(max_threads) as executor:
             for host in hosts:
                 task_id = progress.add_task("brute", start=False, taskid=f"{host[0]}:{host[1]}", status="status")
