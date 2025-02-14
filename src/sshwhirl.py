@@ -148,6 +148,7 @@ def render_table(thread_status):
 
     for thread, status in thread_status.items():
         table.add_row(thread, status)
+        print(table.rows[0])
 
     return table
 
