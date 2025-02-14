@@ -7,7 +7,7 @@ setup(
     description="A script to brute ssh.",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
-    url="https://github.com/KcanCurly/SSHWhirl",
+    url="https://github.com/KcanCurly/ssh-whirl",
     packages=find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
@@ -19,7 +19,7 @@ setup(
     python_requires=">=3.9",
     entry_points={
         "console_scripts": [
-            "sshwhirl.py=src.sshwhirl:main",  
+            "sshwhirl=src.sshwhirl:main",  
         ],
     },
 )
