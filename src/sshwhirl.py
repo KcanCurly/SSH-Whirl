@@ -102,8 +102,9 @@ progress = Progress(
     text_column1, BarColumn(), text_column2, refresh_per_second= 1)
 
 overall_progress = Progress(
-    TimeElapsedColumn(), BarColumn(), TextColumn("{task.description}")
+    TimeElapsedColumn(), BarColumn(), TextColumn("{task.completed}/{task.total}")
 )
+overall_task_id = overall_progress.add_task("", start=False)
 
 progress_group = Group(
     Panel(progress),
@@ -121,12 +122,15 @@ def process_host(task_id, ip, port, credentials, result_file, timeout, verbose):
         progress.start_task(task_id)
         if not pre_check(task_id, ip, port, timeout, verbose):
             progress.update(task_id, status=f"[red]Precheck Failed[/red]")
+            overall_progress.update(overall_task_id, advance=1)
+            return
         else:
             for i, (username, password) in enumerate(credentials):
                 message = check_ssh_connection(task_id, ip, port, username, password, timeout, verbose)
                 if message and message.startswith("[+]"):
                     progress.update(task_id, status=f"[green]Found -> {username}:{password}[/green]", advance=1)
                     write_to_file(result_file, message[4:], verbose)
+                    overall_progress.update(overall_task_id, advance=1)
                     return
                 else: progress.update(task_id, status=f"[yellow]Trying Credentials {i+1}/{cred_len}[/yellow]", advance=1)
         
@@ -134,6 +138,7 @@ def process_host(task_id, ip, port, credentials, result_file, timeout, verbose):
         progress.update(task_id, status=f"[red]Error {e}[/red]")
         
     progress.update(task_id, status=f"[red]No cred found[/red]")
+    overall_progress.update(overall_task_id, advance=1)
 
 
 def main():
@@ -185,13 +190,14 @@ def main():
         print(f"{host_number} hosts are going to be processed")
     
     with Live(progress_group):
-        overall_task_id = overall_progress.add_task("", total=len(hosts))
-        
+        overall_progress.update(overall_task_id, total=len(hosts))
+        i = 0
         with ThreadPoolExecutor(max_threads) as executor:
             for host in hosts:
                 task_id = progress.add_task("brute", start=False, taskid=f"{host[0]}:{host[1]}", status="status")
                 executor.submit(process_host, task_id, host[0], host[1], credentials, args.result_file, args.timeout, args.verbose)
-                overall_progress.update(overall_task_id, advance=1)
+                
+                
     
     
     
