@@ -9,7 +9,7 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/KcanCurly/ssh-whirl",
     packages=find_packages(),
-    requires=[
+    install_requires=[
         "rich",
     ],
     classifiers=[
