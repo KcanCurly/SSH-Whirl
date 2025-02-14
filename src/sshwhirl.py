@@ -117,17 +117,17 @@ def process_host2(task_id, ip, port, credentials, result_file, timeout, verbose)
         progress.update(task_id, status=f"[yellow]Processing {ip}:{port}[/yellow]", total=cred_len)
         progress.start_task(task_id)
         if not pre_check(ip, port, timeout, verbose):
-            progress.update(task_id, status=f"[red]Precheck Failed {ip}:{port}[/red]")
+            progress.update(task_id, status=f"[red]Precheck Failed {ip}:{port}[/red]", completed=True)
         else:
             for i, (username, password) in enumerate(credentials):
                 message = check_ssh_connection(ip, port, username, password, timeout, verbose)
                 progress.update(task_id, status=f"[yellow]Processing {ip}:{port} - {i}/{cred_len}[/yellow]", advance=1)
                 if message and message.startswith("[+]"):
-                    progress.update(task_id, status=f"[green]Found {ip}:{port} -> {username}:{password}[/green]")
+                    progress.update(task_id, status=f"[green]Found {ip}:{port} -> {username}:{password}[/green]", completed=True)
                     write_to_file(result_file, message[4:], verbose)
         
     except Exception as e:
-        progress.update(task_id, status=f"[red]Error {ip}:{port}: {e}[/red]")
+        progress.update(task_id, status=f"[red]Error {ip}:{port}: {e}[/red]", completed=True)
 
 
 def main():
