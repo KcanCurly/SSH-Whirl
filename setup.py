@@ -19,7 +19,7 @@ setup(
         "Intended Audience :: Information Technology",
         "Topic :: Security",
     ],
-    python_requires=">=3.9",
+    python_requires=">=3.12",
     entry_points={
         "console_scripts": [
             "sshwhirl=src.sshwhirl:main",  
