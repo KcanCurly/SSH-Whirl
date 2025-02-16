@@ -136,9 +136,6 @@ def process_host(task_id, ip, port, credentials, result_file, timeout, verbose):
         
     except Exception as e:
         progress.update(task_id, status=f"[red]Error {e}[/red]")
-        
-    progress.update(task_id, status=f"[red]No cred found[/red]")
-    overall_progress.update(overall_task_id, advance=1)
 
 
 def main():
