@@ -127,7 +127,7 @@ def process_host(task_id, ip, port, credentials, result_file, timeout, verbose):
                 message = check_ssh_connection(task_id, ip, port, username, password, timeout, verbose)
                 if message and message.startswith("[+]"):
                     if not found_so_far: found_so_far = f"[green]Found -> [/green]"
-                    else: found_so_far += ", "
+                    else: found_so_far += "[green], [/green]"
                     found_so_far += f"[green]{username}:{password}[/green]"
                     write_to_file(result_file, message[4:], verbose)
                     
@@ -148,11 +148,6 @@ def main():
     parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
     args = parser.parse_args()
     
-    global semaphore
-    semaphore = threading.Semaphore(args.threads)
-
-
-
     # Read credentials from the credentials file
     credentials = []
     with open(args.credentials_file, "r") as f:

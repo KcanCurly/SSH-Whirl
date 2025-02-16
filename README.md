@@ -1,1 +1,1 @@
-This is a ssh brute project.
+sshwhirl hosts.txt creds.txt result.txt
