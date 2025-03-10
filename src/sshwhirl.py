@@ -118,7 +118,7 @@ def process_host(task_id, ip, port, credentials, result_file, timeout, verbose):
         progress.update(task_id, status=f"[yellow]Processing[/yellow]", total=cred_len)
         progress.start_task(task_id)
         if not pre_check(task_id, ip, port, timeout, verbose):
-            progress.update(task_id, status=f"[red]Precheck Failed[/red]")
+            progress.update(task_id, status=f"[red]Precheck Failed[/red]", visible=False)
             overall_progress.update(overall_task_id, advance=1)
             return
         else:
