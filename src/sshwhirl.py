@@ -133,6 +133,8 @@ def process_host(task_id, ip, port, credentials, result_file, timeout, verbose):
                     
                 progress.update(task_id, status=f"[yellow]Trying Credentials {i+1}/{cred_len}[/yellow] {found_so_far}", advance=1)
                 overall_progress.update(overall_task_id, advance=1)
+            if not found_so_far:
+                progress.update(task_id, visible=False)
         
     except Exception as e:
         progress.update(task_id, status=f"[red]Error {e}[/red]")
@@ -140,9 +142,9 @@ def process_host(task_id, ip, port, credentials, result_file, timeout, verbose):
 
 def main():
     parser = argparse.ArgumentParser(description="Check SSH authentication on servers using sshpass and ssh command.")
-    parser.add_argument("hosts_file", help="Path to the input file with host details.")
+    parser.add_argument("hosts_file", help="Path to the input file with host details (ip:port).")
     parser.add_argument("credentials_file", help="Path to the file with credentials (username:password).")
-    parser.add_argument("result_file", default="sshwhirl-output.txt", help="Path to the file where results will be saved.")
+    parser.add_argument("result_file", default="sshwhirl-output.txt", help="Path to the file where results will be saved (Default = sshwhirl-output.txt).")
     parser.add_argument("--timeout", type=int, default=5, help="Timeout for SSH connections in seconds. (Default = 5)")
     parser.add_argument("--threads", type=int, default=10, help="Number of concurrent threads. (Default = 10)")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
