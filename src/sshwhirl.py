@@ -115,7 +115,7 @@ def process_host(task_id, ip, port, credentials, result_file, timeout, verbose):
     """
     cred_len = len(credentials)
     try:
-        progress.update(task_id, status=f"[yellow]Processing[/yellow]", total=cred_len)
+        progress.update(task_id, status=f"[yellow]Processing[/yellow]", total=cred_len, visible=True)
         progress.start_task(task_id)
         if not pre_check(task_id, ip, port, timeout, verbose):
             progress.update(task_id, status=f"[red]Precheck Failed[/red]", visible=False)
@@ -189,6 +189,7 @@ def main():
         with ThreadPoolExecutor(max_threads) as executor:
             for host in hosts:
                 task_id = progress.add_task("brute", start=False, taskid=f"{host[0]}:{host[1]}", status="status")
+                progress.update(task_id, visible=False)
                 executor.submit(process_host, task_id, host[0], host[1], credentials, args.result_file, args.timeout, args.verbose)
                 
 
