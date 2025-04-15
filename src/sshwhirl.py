@@ -41,7 +41,7 @@ def check_ssh_connection(task_id, host, port, username, password, timeout, verbo
         
         # Check if the ssh command was successful
         if result.returncode == 0:
-            return f"[+] {host} => {username}:{password}"
+            return f"[+] {host}:{port} => {username}:{password}"
         elif result.returncode == 255:  # SSH connection reset or error
             if retry_count < 3:
                 wait_time = [20, 40, 60][retry_count]  # Retry times (20, 40, 60 seconds)
