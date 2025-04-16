@@ -166,22 +166,18 @@ def main():
         
     max_threads = args.threads
 
-    host_number = 0
     # Read hosts from the input file
     hosts = []
     with open(args.hosts_file, "r") as f:
         for line in f:
-            host_number += 1
             line = line.strip()
             port = "22"
-            host = line
             if ":" in line:
-                host = line.split(":")[0]
-                port = line.split(":")[1]
+                host, port = line.split(":")
             hosts.append((host, port))
     
     if args.verbose:
-        print(f"{host_number} hosts are going to be processed")
+        print(f"{len(hosts)} hosts are going to be processed")
     
     with Live(progress_group):
         overall_progress.update(overall_task_id, total=len(hosts)*len(credentials))
