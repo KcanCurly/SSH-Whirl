@@ -82,7 +82,6 @@ def pre_check(task_id, host, port, timeout, verbose):
         return True
 
     except Exception as e:
-        print(e)
         return False
 
 def write_to_file(result_file, message, verbose):
